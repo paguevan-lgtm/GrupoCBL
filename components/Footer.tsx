@@ -18,11 +18,11 @@ const Footer: React.FC<FooterProps> = ({ onOpenAnalyzer }) => {
           <div className="lg:col-span-5 space-y-8">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10">
-                 <img 
-                   src="/fav.ico" 
-                   alt="Grupo CBL Logo" 
-                   className="w-full h-full object-contain"
-                 />
+                <svg viewBox="0 0 100 100" fill="none" className="w-full h-full">
+                  <path d="M50 10 L80 60 H20 L50 10Z" fill="#e60000" />
+                  <path d="M22 65 L15 82 H35 L39 65 H22Z" fill="white" />
+                  <path d="M61 65 L65 82 H85 L81 65 H61Z" fill="white" />
+                </svg>
               </div>
               <div>
                 <h3 className="font-display font-bold text-2xl text-white tracking-tight leading-none">GRUPO CBL</h3>
