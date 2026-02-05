@@ -19,7 +19,7 @@ const Footer: React.FC<FooterProps> = ({ onOpenAnalyzer }) => {
             <div className="flex items-center gap-3">
               <div className="w-10 h-10">
                  <img 
-                   src="/CBL.png" 
+                   <img src={`${import.meta.env.BASE_URL}CBL.png`} />
                    alt="Grupo CBL Logo" 
                    className="w-full h-full object-contain"
                  />
