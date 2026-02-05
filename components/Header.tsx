@@ -55,21 +55,11 @@ const Header: React.FC<HeaderProps> = ({ onOpenAnalyzer }) => {
         {/* Logo Section */}
         <a href="/" className="flex items-center gap-3 group z-50">
           <div className="w-12 h-12 relative flex-shrink-0 transition-transform duration-300 group-hover:scale-105">
-             {/* Geometric Triangle Logo Construction */}
-             <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full drop-shadow-[0_0_15px_rgba(230,0,0,0.3)]">
-                {/* Top Red Triangle (A-like shape) */}
-                <path d="M50 10 L80 60 H20 L50 10Z" fill="#e60000" stroke="#e60000" strokeWidth="2" strokeLinejoin="round" />
-                
-                {/* Cutout for 'B' and 'L' separation */}
-                <path d="M42 62 L32 85 H10 L25 62 H42Z" fill="white" />
-                <path d="M58 62 L68 85 H90 L75 62 H58Z" fill="white" />
-                
-                {/* Stylized 'B' part (Left) */}
-                <path d="M22 65 L15 82 H35 L39 65 H22Z" fill="white" />
-                
-                {/* Stylized 'L' part (Right) */}
-                <path d="M61 65 L65 82 H85 L81 65 H61Z" fill="#e60000" />
-             </svg>
+             <img 
+               src="/favicon.ico" 
+               alt="Grupo CBL Logo" 
+               className="w-full h-full object-contain drop-shadow-[0_0_15px_rgba(230,0,0,0.3)]"
+             />
           </div>
           <div className="flex flex-col justify-center">
             <span className="font-display font-bold text-2xl tracking-tighter text-white leading-none group-hover:text-gray-200 transition-colors">
