@@ -56,7 +56,7 @@ const Header: React.FC<HeaderProps> = ({ onOpenAnalyzer }) => {
         <a href="/" className="flex items-center gap-3 group z-50">
           <div className="w-12 h-12 relative flex-shrink-0 transition-transform duration-300 group-hover:scale-105">
              <img 
-               src="/CBL.png" 
+               <img src={`${import.meta.env.BASE_URL}CBL.png`} />
                alt="Grupo CBL Logo" 
                className="w-full h-full object-contain drop-shadow-[0_0_15px_rgba(230,0,0,0.3)]"
              />
