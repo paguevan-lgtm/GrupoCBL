@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Monitor, Cpu, Globe, Settings, Smartphone, TrendingUp } from 'lucide-react';
-import { ServiceItem } from '../types';
+import type { ServiceItem } from '../types';
 
 const services: ServiceItem[] = [
   { id: 1, title: 'Desenvolvimento Web', description: 'Sites institucionais de alto impacto, landing pages que convertem e portais corporativos robustos.', icon: Monitor },
