@@ -37,7 +37,7 @@ const Header: React.FC<{ onOpenModal: () => void }> = ({ onOpenModal }) => {
   };
 
   return (
-    <header className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${isScrolled ? 'bg-black/80 backdrop-blur-sm border-b border-red-600/20' : 'bg-transparent'}`}>
+    <header className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${isScrolled ? 'bg-black/80 border-b border-red-600/20' : 'bg-transparent'}`}>
       <div className="container mx-auto px-6 py-4 border-b border-white/10">
         <div className="flex justify-between items-center">
           <a href="#hero" className="text-xl font-bold tracking-wider">
