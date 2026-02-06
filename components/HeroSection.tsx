@@ -113,8 +113,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onOpenModal, startAnimation }
             
             <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black tracking-tighter uppercase flex flex-col items-center">
               <div className="overflow-hidden py-1"><span className={`block transition-all duration-700 ease-out ${animateText ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-full'}`} style={{ transitionDelay: '200ms' }}>Oportunidade</span></div>
-              <div className="overflow-hidden py-1"><span className={`block text-gray-400 transition-all duration-700 ease-out ${animateText ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-full'}`} style={{ transitionDelay: '350ms' }}>Não se</span></div>
-              <div className="overflow-hidden py-1"><span className={`block text-gray-400 transition-all duration-700 ease-out ${animateText ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-full'}`} style={{ transitionDelay: '400ms' }}>espera.</span></div>
+              <div className="overflow-hidden py-1"><span className={`block text-gray-400 transition-all duration-700 ease-out ${animateText ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-full'}`} style={{ transitionDelay: '350ms' }}>Não se Espera</span></div>
               <div className="overflow-hidden py-1"><span className={`text-red-600 block transition-all duration-700 ease-out ${animateText ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-full'}`} style={{ transitionDelay: '550ms' }}>Se cria.</span></div>
             </h1>
 
