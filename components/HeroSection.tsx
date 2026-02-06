@@ -57,16 +57,6 @@ interface HeroSectionProps {
 }
 
 const HeroSection: React.FC<HeroSectionProps> = ({ onOpenModal, startAnimation }) => {
-  const wrapperRef = useRef<HTMLDivElement>(null);
-  const rotatingContainerRef = useRef<HTMLDivElement>(null);
-  const animationFrameId = useRef<number>();
-  const currentRotation = useRef(0);
-  
-  // Animation state refs
-  const initialGlobeScale = useRef(1.6); // Increased initial zoom
-  const initialRotationX = useRef(-20); // Initial tilt
-  const initialRotationY = useRef(30);  // Initial side rotation
-  
   const [animateText, setAnimateText] = useState(false);
 
   useEffect(() => {
@@ -85,59 +75,6 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onOpenModal, startAnimation }
       }));
   }, []);
 
-
-  useEffect(() => {
-    const animate = () => {
-      if (!wrapperRef.current || !rotatingContainerRef.current) return;
-
-      const scrollY = window.scrollY;
-      const heroHeight = document.getElementById('hero')?.offsetHeight || window.innerHeight;
-      
-      currentRotation.current += 0.03;
-
-      let scrollRotation = 0;
-      if (scrollY <= heroHeight) {
-        scrollRotation = (scrollY / heroHeight) * 45;
-      }
-      const totalYRotation = currentRotation.current + scrollRotation;
-     
-      if (startAnimation) {
-        // --- Settle Effect Animation ---
-        // Animate initial scale from 1.6 down to 1
-        initialGlobeScale.current += (1 - initialGlobeScale.current) * 0.04;
-        // Animate initial rotation back to 0
-        initialRotationX.current += (0 - initialRotationX.current) * 0.04;
-        initialRotationY.current += (0 - initialRotationY.current) * 0.04;
-      } else {
-        // Reset if intro is not finished
-        initialGlobeScale.current = 1.6;
-        initialRotationX.current = -20;
-        initialRotationY.current = 30;
-      }
-
-      // Apply combined rotations
-      rotatingContainerRef.current.style.transform = `rotateY(${totalYRotation + initialRotationY.current}deg) rotateX(${10 + initialRotationX.current}deg)`;
-
-      // --- Zoom on scroll ---
-      const scrollPercentZoom = Math.min(1, scrollY / (heroHeight * 0.8));
-      const scrollScale = 1 + scrollPercentZoom * 0.4;
-      
-      // Combine initial zoom-out with scroll-based zoom
-      wrapperRef.current.style.transform = `scale(${initialGlobeScale.current * scrollScale})`;
-
-      animationFrameId.current = requestAnimationFrame(animate);
-    };
-
-    animationFrameId.current = requestAnimationFrame(animate);
-
-    return () => {
-      if (animationFrameId.current) {
-        cancelAnimationFrame(animationFrameId.current);
-      }
-    };
-  }, [startAnimation]);
-
-
   const handleOpenModal = (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault();
     onOpenModal();
@@ -149,9 +86,9 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onOpenModal, startAnimation }
         className="h-[100svh] min-h-[700px] lg:min-h-screen relative overflow-hidden" 
     >
       <div className="tech-globe-container">
-        <div className="globe-wrapper" ref={wrapperRef}>
+        <div className={`globe-wrapper ${startAnimation ? 'settle-effect' : ''}`}>
             <div className="globe-background"></div>
-            <div className="rotating-elements" ref={rotatingContainerRef}>
+            <div className={`rotating-elements ${startAnimation ? 'is-animating' : ''}`}>
                 {globePoints.map((point, index) => (
                     <GlobePoint key={`dot-${index}`} lat={point.lat} lon={point.lon} />
                 ))}
@@ -174,21 +111,22 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onOpenModal, startAnimation }
               </span>
             </div>
             
-            <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black tracking-tighter uppercase">
+            <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black tracking-tighter uppercase flex flex-col items-center">
               <div className="overflow-hidden py-1"><span className={`block transition-all duration-700 ease-out ${animateText ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-full'}`} style={{ transitionDelay: '200ms' }}>Oportunidade</span></div>
-              <div className="overflow-hidden py-1"><span className={`block bg-gradient-to-r from-gray-500 to-white text-transparent bg-clip-text transition-all duration-700 ease-out ${animateText ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-full'}`} style={{ transitionDelay: '350ms' }}>Não se espera.</span></div>
-              <div className="overflow-hidden py-1"><span className={`text-red-600 block transition-all duration-700 ease-out ${animateText ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-full'}`} style={{ transitionDelay: '500ms' }}>Se cria.</span></div>
+              <div className="overflow-hidden py-1"><span className={`block text-gray-400 transition-all duration-700 ease-out ${animateText ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-full'}`} style={{ transitionDelay: '350ms' }}>Não se</span></div>
+              <div className="overflow-hidden py-1"><span className={`block text-gray-400 transition-all duration-700 ease-out ${animateText ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-full'}`} style={{ transitionDelay: '400ms' }}>espera.</span></div>
+              <div className="overflow-hidden py-1"><span className={`text-red-600 block transition-all duration-700 ease-out ${animateText ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-full'}`} style={{ transitionDelay: '550ms' }}>Se cria.</span></div>
             </h1>
 
             <p 
               className={`text-lg md:text-xl text-gray-300 max-w-2xl mx-auto my-6 md:my-8 transition-all duration-700 ease-out ${animateText ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
-              style={{ transitionDelay: '700ms' }}
+              style={{ transitionDelay: '750ms' }}
             >
               Especialistas em transformar ideias complexas em ecossistemas digitais de alta performance. Estratégia, desenvolvimento e lucro em um só lugar.
             </p>
             <div 
               className={`flex flex-wrap justify-center items-center gap-4 transition-all duration-700 ease-out ${animateText ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
-              style={{ transitionDelay: '800ms' }}
+              style={{ transitionDelay: '850ms' }}
             >
               <a href="#" onClick={handleOpenModal} className="bg-red-600 text-white px-8 py-3 rounded-md font-bold hover:bg-red-700 transition-transform duration-300 hover:scale-105 flex items-center gap-2">
                 INICIAR PROJETO 
@@ -203,7 +141,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onOpenModal, startAnimation }
       
       <div 
         className={`absolute bottom-10 left-1/2 -translate-x-1/2 text-center text-white/50 text-xs tracking-widest uppercase z-10 transition-opacity duration-700 ease-out ${animateText ? 'opacity-100' : 'opacity-0'}`}
-        style={{ transitionDelay: '1000ms' }}
+        style={{ transitionDelay: '1050ms' }}
       >
         Explore
         <svg className="w-4 h-4 mx-auto mt-2 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" /></svg>
