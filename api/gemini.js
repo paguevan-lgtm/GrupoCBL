@@ -1,5 +1,5 @@
 export default async function handler(req, res) {
-  const prompt = req.body.prompt;
+  const { prompt } = req.body;
 
   if (!prompt) return res.status(400).json({ error: "Prompt obrigatório" });
 
@@ -9,7 +9,9 @@ export default async function handler(req, res) {
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt }),
+        body: JSON.stringify({
+          prompt: { text: prompt }   // ✅ correção aqui
+        }),
       }
     );
 
