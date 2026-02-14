@@ -16,20 +16,20 @@ const DiagnosticModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ i
         setError(null);
 
         const rawKey = process.env.API_KEY || "";
-        const cleanKey = rawKey.replace(/[^a-zA-Z0-9\-_]/g, '').trim();
-        const maskedKey = cleanKey.length > 8 ? `${cleanKey.substring(0, 5)}...${cleanKey.substring(cleanKey.length - 4)}` : "Inválida";
+        const apiKey = rawKey.replace(/[^a-zA-Z0-9\-_]/g, '').trim();
+        const maskedKey = apiKey.length > 8 ? `${apiKey.substring(0, 5)}...${apiKey.substring(apiKey.length - 4)}` : "Inválida";
 
-        if (!cleanKey) {
-            setError({ message: 'Erro de Configuração.', technical: 'Chave não encontrada no Vercel.', keyDebug: maskedKey });
+        if (!apiKey || apiKey.toLowerCase().includes("placeholder")) {
+            setError({ message: 'Erro de Configuração.', technical: 'Variável API_KEY não configurada no Vercel.', keyDebug: maskedKey });
             setView('form');
             return;
         }
 
         try {
-            const ai = new GoogleGenAI({ apiKey: cleanKey });
+            const ai = new GoogleGenAI({ apiKey });
             const response = await ai.models.generateContent({
-                model: 'gemini-3-flash-preview',
-                contents: `Gere um diagnóstico para a empresa ${formData.nome}. Desafio: ${formData.dificuldade}.`,
+                model: 'gemini-flash-latest',
+                contents: `Gere um diagnóstico de negócios para a empresa ${formData.nome}. Desafio: ${formData.dificuldade}. Responda em Português do Brasil com tom profissional e estratégico.`,
             });
             setAnalysisResult(response.text ?? '');
             setView('result');
@@ -38,7 +38,7 @@ const DiagnosticModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ i
             setError({ 
                 message: isInvalidKey ? 'Chave Recusada.' : 'Erro de Análise.', 
                 keyDebug: maskedKey,
-                technical: isInvalidKey ? 'O Google não aceitou esta chave de API.' : err.message 
+                technical: isInvalidKey ? 'Verifique se a variável de ambiente foi atualizada no Vercel.' : err.message 
             });
             setView('form');
         }
@@ -47,15 +47,15 @@ const DiagnosticModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ i
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/90 p-4" onClick={onClose}>
-            <div className="bg-[#111] rounded-2xl w-full max-w-xl border border-white/10 p-8 relative" onClick={e => e.stopPropagation()}>
-                <button onClick={onClose} className="absolute top-6 right-6 text-gray-500 hover:text-white"><XIcon /></button>
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/95 p-4" onClick={onClose}>
+            <div className="bg-[#0a0a0a] rounded-3xl w-full max-w-xl border border-white/10 p-10 relative shadow-2xl" onClick={e => e.stopPropagation()}>
+                <button onClick={onClose} className="absolute top-8 right-8 text-gray-500 hover:text-white transition-colors"><XIcon /></button>
                 
                 {view === 'form' && (
                      <form onSubmit={handleSubmit} className="space-y-6">
                         <div className="text-center mb-8">
-                            <h2 className="text-2xl font-black text-white uppercase italic tracking-tighter">Raio-X <span className="text-red-600">Flash</span></h2>
-                            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-1">Grupo CBL Intelligence</p>
+                            <h2 className="text-3xl font-black text-white uppercase italic tracking-tighter">Raio-X <span className="text-red-600">Flash</span></h2>
+                            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-1">Grupo CBL Intelligence Unit</p>
                         </div>
 
                         <div className="space-y-4">
@@ -64,39 +64,39 @@ const DiagnosticModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ i
                                 placeholder="Nome da Empresa"
                                 value={formData.nome}
                                 onChange={e => setFormData({...formData, nome: e.target.value})}
-                                className="w-full bg-white/5 border border-white/10 rounded-md px-4 py-3 text-white focus:border-red-600 outline-none transition-all"
+                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-4 text-white focus:border-red-600 outline-none transition-all placeholder:text-white/10"
                             />
                             <textarea
-                                placeholder="Qual sua maior dificuldade?"
+                                placeholder="Qual seu maior desafio tecnológico atual?"
                                 value={formData.dificuldade}
                                 onChange={e => setFormData({...formData, dificuldade: e.target.value})}
-                                className="w-full bg-white/5 border border-white/10 rounded-md px-4 py-3 text-white h-32 focus:border-red-600 outline-none transition-all resize-none"
+                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-4 text-white h-32 focus:border-red-600 outline-none transition-all resize-none placeholder:text-white/10"
                             />
                         </div>
                         
                         {error && (
-                            <div className="p-4 bg-red-600/5 border border-red-600/20 rounded text-center">
+                            <div className="p-4 bg-red-600/5 border border-red-600/20 rounded-xl text-center">
                                 <p className="text-red-500 text-[10px] font-bold uppercase">{error.message}</p>
                                 <p className="text-[9px] text-gray-500 mt-1 font-mono">DEBUG: {error.keyDebug}</p>
                             </div>
                         )}
-                        <button type="submit" className="w-full bg-white text-black py-4 rounded font-black uppercase hover:bg-red-600 hover:text-white transition-all">Analisar Agora</button>
+                        <button type="submit" className="w-full bg-white text-black py-5 rounded-xl font-black uppercase tracking-widest hover:bg-red-600 hover:text-white transition-all shadow-lg">Solicitar Diagnóstico IA</button>
                     </form>
                 )}
                 
                 {view === 'loading' && (
-                    <div className="flex flex-col items-center py-12">
+                    <div className="flex flex-col items-center py-20">
                         <SpinnerIcon />
-                        <p className="mt-6 text-white text-xs font-bold animate-pulse uppercase tracking-widest">Processando Inteligência...</p>
+                        <p className="mt-8 text-white text-[10px] font-bold animate-pulse uppercase tracking-[0.3em]">Analisando Ecossistema...</p>
                     </div>
                 )}
 
                 {view === 'result' && (
                     <div className="space-y-6">
-                        <div className="max-h-[50vh] overflow-y-auto custom-scrollbar pr-2 text-sm text-gray-300 leading-relaxed font-light">
+                        <div className="max-h-[50vh] overflow-y-auto custom-scrollbar pr-4 text-sm text-gray-400 leading-relaxed font-light">
                             <div dangerouslySetInnerHTML={{ __html: analysisResult.replace(/\n/g, '<br/>') }} />
                         </div>
-                        <button onClick={() => setView('form')} className="w-full bg-white/5 text-white py-3 rounded text-[10px] uppercase font-bold hover:bg-white/10 transition-all">Nova Análise</button>
+                        <button onClick={() => setView('form')} className="w-full bg-white/5 text-white py-4 rounded-xl text-[10px] uppercase font-bold hover:bg-white/10 transition-all border border-white/5">Nova Simulação</button>
                     </div>
                 )}
             </div>
