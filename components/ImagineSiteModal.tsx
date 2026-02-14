@@ -88,14 +88,15 @@ const ImagineSiteModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ 
     setStep('loading');
     setError(null);
 
-    const apiKey = process.env.API_KEY;
+    // CRÍTICO: .trim() remove espaços que o Vercel ou o Ctrl+C podem ter incluído
+    const rawApiKey = process.env.API_KEY || "";
+    const apiKey = rawApiKey.trim();
     
-    // Verificação de segurança da chave
     if (!apiKey || apiKey === "undefined" || apiKey.length < 10) {
       setError({ 
         message: 'Configuração da API CBL Pendente.', 
         isQuota: false, 
-        technical: 'A variável API_KEY não foi injetada corretamente ou é inválida. Verifique o painel do Vercel.' 
+        technical: 'A variável API_KEY está vazia ou não foi encontrada no Vercel. Verifique as Environment Variables e faça um Redeploy.' 
       });
       setStep('form');
       return;
@@ -127,12 +128,16 @@ const ImagineSiteModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ 
       }, 800);
     } catch (err: any) {
       console.error("ImagineSiteModal API Error:", err);
-      const isQuotaError = err?.status === 429 || err?.message?.includes("429") || err?.message?.includes("quota");
+      const errorMsg = err?.message || '';
+      const isInvalidKey = errorMsg.includes("400") || errorMsg.includes("API key not valid");
+      const isQuotaError = err?.status === 429 || errorMsg.includes("429") || errorMsg.includes("quota");
       
       setError({ 
-        message: isQuotaError ? 'Limite de Requisições Excedido.' : 'Falha na Engenharia do Draft.', 
+        message: isInvalidKey ? 'Chave de API Inválida.' : isQuotaError ? 'Limite de Requisições Excedido.' : 'Falha na Engenharia do Draft.', 
         isQuota: isQuotaError,
-        technical: err?.message || 'Erro de comunicação desconhecido.'
+        technical: isInvalidKey 
+          ? 'O Google recusou sua chave. Verifique se copiou corretamente do AI Studio e se fez o REDEPLOY no Vercel.' 
+          : errorMsg || 'Erro de comunicação desconhecido.'
       });
       setStep('form');
     }
