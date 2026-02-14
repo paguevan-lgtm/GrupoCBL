@@ -4,7 +4,6 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { SpinnerIcon } from './icons/SpinnerIcon';
 import { XIcon } from './icons/XIcon';
 
-// FIX: Added interface for FormFieldProps and made placeholder optional to resolve TS errors where it was not provided in component calls.
 interface FormFieldProps {
     label: string;
     placeholder?: string;
@@ -41,10 +40,11 @@ const DiagnosticModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ i
         setView('loading');
         setError(null);
 
-        const apiKey = process.env.API_KEY;
+        const rawApiKey = process.env.API_KEY || "";
+        const apiKey = rawApiKey.trim();
         
         if (!apiKey || apiKey === "undefined") {
-          setError({ message: 'Conexão com API Indisponível.', technical: 'Variável API_KEY não configurada no ambiente.' });
+          setError({ message: 'Conexão com API Indisponível.', technical: 'Variável API_KEY não configurada ou vazia. Verifique o Vercel e faça o Redeploy.' });
           setView('form');
           return;
         }
@@ -59,7 +59,15 @@ const DiagnosticModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ i
             setView('result');
         } catch (err: any) {
             console.error("Diagnostic API Error:", err);
-            setError({ message: 'Falha na análise estratégica.', technical: err?.message || 'Erro de rede ou cota.' });
+            const errorMsg = err?.message || '';
+            const isInvalidKey = errorMsg.includes("400") || errorMsg.includes("API key not valid");
+            
+            setError({ 
+                message: isInvalidKey ? 'Erro de Autenticação.' : 'Falha na análise estratégica.', 
+                technical: isInvalidKey 
+                  ? 'A chave de API é considerada inválida pelo Google. Verifique espaços extras no Vercel.' 
+                  : errorMsg || 'Erro de rede ou cota.' 
+            });
             setView('form');
         }
     };
