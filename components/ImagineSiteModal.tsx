@@ -28,7 +28,7 @@ const ImagineSiteModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ 
 
   const logs = [
     "Iniciando Sistema de Draft Grupo CBL...",
-    "Validando credenciais de alta performance...",
+    "Validando infraestrutura de rede segura...",
     "Escaneando identidade visual e referências...",
     "Gerando design tokens personalizados...",
     "Arquitetando layout mobile-first...",
@@ -88,15 +88,14 @@ const ImagineSiteModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ 
     setStep('loading');
     setError(null);
 
-    // .trim() remove espaços acidentais vindos das variáveis de ambiente
-    const rawKey = process.env.API_KEY || "";
-    const apiKey = rawKey.trim();
-
-    if (!apiKey || apiKey === "undefined") {
+    const apiKey = process.env.API_KEY;
+    
+    // Verificação de segurança da chave
+    if (!apiKey || apiKey === "undefined" || apiKey.length < 10) {
       setError({ 
-        message: 'Chave API não configurada.', 
+        message: 'Configuração da API CBL Pendente.', 
         isQuota: false, 
-        technical: 'A variável API_KEY não foi encontrada pelo sistema.' 
+        technical: 'A variável API_KEY não foi injetada corretamente ou é inválida. Verifique o painel do Vercel.' 
       });
       setStep('form');
       return;
@@ -105,8 +104,8 @@ const ImagineSiteModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ 
     const ai = new GoogleGenAI({ apiKey });
     
     const prompt = `
-      Crie um website profissional JSON para ${formData.companyName}.
-      Estilo: ${formData.styleDescription}. Essência: ${formData.essence}.
+      Crie um website profissional JSON para a empresa ${formData.companyName}.
+      Estilo: ${formData.styleDescription}. Essência do negócio: ${formData.essence}.
       Retorne JSON: { "index.html": "...", "theme.css": "...", "interactions.js": "..." }
     `;
 
@@ -127,20 +126,14 @@ const ImagineSiteModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ 
         setIsCtaVisible(true);
       }, 800);
     } catch (err: any) {
-      console.error("ImagineSiteModal Error Detail:", err);
-      const msg = err?.message || 'Erro desconhecido';
+      console.error("ImagineSiteModal API Error:", err);
+      const isQuotaError = err?.status === 429 || err?.message?.includes("429") || err?.message?.includes("quota");
       
-      if (msg.includes("400") || msg.includes("API key not valid")) {
-        setError({ 
-            message: 'Chave de API inválida no Google Cloud.', 
-            isQuota: false, 
-            technical: 'O Google recusou sua chave. Verifique se copiou corretamente no Vercel e se a Generative Language API está ativa.' 
-        });
-      } else if (msg.includes("429") || msg.includes("quota")) {
-        setError({ message: 'Limite excedido.', isQuota: true, technical: msg });
-      } else {
-        setError({ message: 'Falha técnica no draft.', isQuota: false, technical: msg });
-      }
+      setError({ 
+        message: isQuotaError ? 'Limite de Requisições Excedido.' : 'Falha na Engenharia do Draft.', 
+        isQuota: isQuotaError,
+        technical: err?.message || 'Erro de comunicação desconhecido.'
+      });
       setStep('form');
     }
   };
@@ -177,35 +170,38 @@ const ImagineSiteModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ 
                     value={formData.companyName}
                     onChange={(e) => setFormData({...formData, companyName: e.target.value})}
                     placeholder="Nome da Empresa" 
-                    className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 md:py-4 text-white outline-none" 
+                    className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 md:py-4 text-white outline-none focus:border-red-600" 
                 />
                 <input 
                     type="text" 
                     value={formData.styleDescription}
                     onChange={(e) => setFormData({...formData, styleDescription: e.target.value})}
-                    placeholder="Estilo (Ex: Moderno, Sombrio)" 
-                    className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 md:py-4 text-white outline-none" 
+                    placeholder="Estilo (Ex: Moderno, Minimalista)" 
+                    className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 md:py-4 text-white outline-none focus:border-red-600" 
                 />
               </div>
 
               <textarea 
                 value={formData.essence}
                 onChange={(e) => setFormData({...formData, essence: e.target.value})}
-                placeholder="O que o negócio faz?" 
-                className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 md:py-4 text-white h-32 outline-none" 
+                placeholder="Qual o diferencial do negócio?" 
+                className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 md:py-4 text-white h-32 outline-none focus:border-red-600 resize-none" 
               />
 
               <div className="space-y-4">
                 {error && (
-                  <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-lg text-center">
-                    <p className="text-red-500 font-bold uppercase text-xs">{error.message}</p>
-                    <p className="text-[10px] text-gray-500 font-mono mt-1">{error.technical}</p>
-                    {error.isQuota && <button onClick={handleOpenSelectKey} className="mt-2 text-[10px] underline text-white">Configurar Chave Paga</button>}
+                  <div className="p-4 bg-red-600/10 border border-red-600/30 rounded-lg text-center">
+                    <p className="text-red-500 font-bold uppercase text-xs tracking-widest">{error.message}</p>
+                    <p className="text-[10px] text-gray-500 font-mono mt-1 opacity-70 italic">{error.technical}</p>
+                    {error.isQuota && (
+                      <button onClick={handleOpenSelectKey} className="mt-2 text-[10px] text-white underline block mx-auto">Configurar Chave Própria</button>
+                    )}
                   </div>
                 )}
                 <button 
                   onClick={generateFullWebsite}
-                  className="w-full bg-white text-black py-4 md:py-6 rounded-lg font-black uppercase tracking-widest hover:bg-red-600 hover:text-white transition-all"
+                  disabled={!formData.companyName}
+                  className="w-full bg-white text-black py-4 md:py-6 rounded-lg font-black uppercase tracking-widest hover:bg-red-600 hover:text-white transition-all disabled:opacity-30"
                 >
                   Engenhar Draft
                 </button>
@@ -222,7 +218,7 @@ const ImagineSiteModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ 
                   {buildLogs.map((log, i) => <div key={i}>{log}</div>)}
                </div>
                <div className="h-1 bg-white/5 rounded-full overflow-hidden">
-                 <div className="h-full bg-red-600" style={{ width: `${progress}%` }}></div>
+                 <div className="h-full bg-red-600 transition-all duration-300" style={{ width: `${progress}%` }}></div>
                </div>
             </div>
           </div>
