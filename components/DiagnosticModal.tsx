@@ -4,7 +4,18 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { SpinnerIcon } from './icons/SpinnerIcon';
 import { XIcon } from './icons/XIcon';
 
-const FormField = ({ label, placeholder = '', name, value, onChange, isChecked, type = 'text' }) => (
+// FIX: Added interface for FormFieldProps and made placeholder optional to resolve TS errors where it was not provided in component calls.
+interface FormFieldProps {
+    label: string;
+    placeholder?: string;
+    name: string;
+    value: string;
+    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    isChecked: boolean;
+    type?: string;
+}
+
+const FormField: React.FC<FormFieldProps> = ({ label, placeholder = '', name, value, onChange, isChecked, type = 'text' }) => (
     <div>
         <label className="block text-sm font-medium text-gray-300 mb-1">{label}</label>
         <input
@@ -30,11 +41,10 @@ const DiagnosticModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ i
         setView('loading');
         setError(null);
 
-        const rawKey = process.env.API_KEY || "";
-        const apiKey = rawKey.trim();
-
+        const apiKey = process.env.API_KEY;
+        
         if (!apiKey || apiKey === "undefined") {
-          setError({ message: 'Chave API não configurada.', technical: 'A variável de ambiente API_KEY está vazia.' });
+          setError({ message: 'Conexão com API Indisponível.', technical: 'Variável API_KEY não configurada no ambiente.' });
           setView('form');
           return;
         }
@@ -43,16 +53,13 @@ const DiagnosticModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ i
             const ai = new GoogleGenAI({ apiKey });
             const response = await ai.models.generateContent({
                 model: 'gemini-3-flash-preview',
-                contents: `Raio-X para ${formData.nome}. Dificuldade: ${formData.dificuldade}.`,
+                contents: `Gere um diagnóstico de negócios estratégico para a empresa ${formData.nome}. Dificuldade relatada: ${formData.dificuldade}. Foque em soluções tecnológicas do Grupo CBL.`,
             });
             setAnalysisResult(response.text ?? '');
             setView('result');
         } catch (err: any) {
-            console.error("Diagnostic Error:", err);
-            setError({ 
-                message: 'Erro no Raio-X.', 
-                technical: err?.message || 'Verifique sua chave de API e conexão.' 
-            });
+            console.error("Diagnostic API Error:", err);
+            setError({ message: 'Falha na análise estratégica.', technical: err?.message || 'Erro de rede ou cota.' });
             setView('form');
         }
     };
@@ -66,29 +73,32 @@ const DiagnosticModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ i
                 
                 {view === 'form' && (
                      <form onSubmit={handleSubmit} className="space-y-4">
-                        <h2 className="text-2xl font-bold text-center text-white italic uppercase">Raio-X</h2>
-                        <FormField label="Nome" name="nome" value={formData.nome} onChange={e => setFormData({...formData, nome: e.target.value})} isChecked={false} />
-                        <FormField label="Dificuldade" name="dificuldade" value={formData.dificuldade} onChange={e => setFormData({...formData, dificuldade: e.target.value})} isChecked={false} />
+                        <h2 className="text-2xl font-bold text-center text-white italic uppercase">Raio-X de Negócios</h2>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                           <FormField label="Nome" name="nome" value={formData.nome} onChange={e => setFormData({...formData, nome: e.target.value})} isChecked={false} />
+                           <FormField label="Faturamento" name="faturamento" value={formData.faturamento} onChange={e => setFormData({...formData, faturamento: e.target.value})} isChecked={false} />
+                        </div>
+                        <FormField label="Principal Dificuldade" name="dificuldade" value={formData.dificuldade} onChange={e => setFormData({...formData, dificuldade: e.target.value})} isChecked={false} />
                         
                         {error && (
-                            <div className="p-3 bg-red-500/10 border border-red-500/20 rounded">
-                                <p className="text-red-500 text-xs font-bold">{error.message}</p>
-                                <p className="text-[10px] text-gray-500 mt-1">{error.technical}</p>
+                            <div className="p-3 bg-red-600/10 border border-red-600/30 rounded text-center">
+                                <p className="text-red-500 text-xs font-bold uppercase tracking-wider">{error.message}</p>
+                                <p className="text-[10px] text-gray-500 mt-1 italic font-mono">{error.technical}</p>
                             </div>
                         )}
-                        <button type="submit" className="w-full bg-red-600 text-white py-3 rounded font-bold uppercase italic">Analisar</button>
+                        <button type="submit" className="w-full bg-red-600 text-white py-3 rounded font-bold uppercase italic hover:bg-red-700">Iniciar Diagnóstico</button>
                     </form>
                 )}
                 
                 {view === 'loading' && (
                     <div className="flex flex-col items-center py-12">
                         <SpinnerIcon />
-                        <p className="mt-4 text-white animate-pulse">Consultando CBL Engine...</p>
+                        <p className="mt-4 text-white animate-pulse">Sincronizando com Engenharia CBL...</p>
                     </div>
                 )}
 
                 {view === 'result' && (
-                    <div className="max-h-[70vh] overflow-y-auto custom-scrollbar text-white">
+                    <div className="max-h-[70vh] overflow-y-auto custom-scrollbar text-gray-200">
                         <div dangerouslySetInnerHTML={{ __html: analysisResult.replace(/\n/g, '<br/>') }} />
                         <button onClick={() => setView('form')} className="mt-6 w-full bg-white/10 text-white py-2 rounded text-xs">Nova Análise</button>
                     </div>
