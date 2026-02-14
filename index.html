@@ -6,25 +6,24 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Grupo CBL - Inovação & Tech</title>
-    <script>
-      // Polyfill crítico para permitir que process.env.API_KEY funcione no navegador
-      // e evitar o erro "process is not defined" no console do usuário.
-      window.process = window.process || { env: {} };
-    </script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
+      /* Adicionando uma fonte moderna sem serifa do Google Fonts */
       @import url('https://fonts.googleapis.com/css2?family-Inter:wght@400;500;600;700;900&display=swap');
       body {
         font-family: 'Inter', sans-serif;
         background-color: #1A1A1A;
+        /* Mobile-first: globe is 115% of viewport width */
         --globe-size: 115vw;
         --globe-radius: calc(var(--globe-size) / 2);
       }
       header {
+        /* Otimização de performance para o header fixo */
         will-change: transform, background-color, border-color;
       }
       @media (min-width: 1024px) {
         body {
+            /* On desktop, base size on viewport height */
             --globe-size: 100vh;
         }
       }
@@ -32,6 +31,7 @@
         opacity: 0;
         transform: translateY(20px);
         transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+        /* Otimização de performance para animações de scroll */
         will-change: transform, opacity;
       }
       .fade-in-section.is-visible {
@@ -59,21 +59,23 @@
           position: relative;
           z-index: 1;
       }
+      /* Custom scrollbar for result view */
       .custom-scrollbar::-webkit-scrollbar {
         width: 8px;
       }
       .custom-scrollbar::-webkit-scrollbar-track {
-        background: #1F2937;
+        background: #1F2937; /* Cor do trilho da barra de rolagem */
         border-radius: 10px;
       }
       .custom-scrollbar::-webkit-scrollbar-thumb {
-        background: #4A5568;
+        background: #4A5568; /* Cor da barra de rolagem */
         border-radius: 10px;
       }
       .custom-scrollbar::-webkit-scrollbar-thumb:hover {
         background: #718096;
       }
 
+      /* Final Globe with Static BG and Rotating Foreground */
       .tech-globe-container {
         position: absolute;
         inset: 0;
@@ -86,10 +88,10 @@
       .globe-wrapper {
         position: relative;
         width: var(--globe-size);
-        aspect-ratio: 1 / 1;
+        aspect-ratio: 1 / 1; /* Enforces 1:1 aspect ratio */
         transform-style: preserve-3d;
         will-change: transform;
-        max-width: 1200px;
+        max-width: 1200px; /* Cap the max size */
         transform: scale(1.6);
       }
       .globe-background {
@@ -149,6 +151,7 @@
         }
       }
 
+      /* -- Animação do Globo via CSS para Performance -- */
       .globe-wrapper.settle-effect {
         transition: transform 2.5s cubic-bezier(0.25, 1, 0.5, 1);
         transform: scale(1);
@@ -166,6 +169,7 @@
         }
       }
       
+      /* --- Modal Input Focus --- */
       .modal-input:focus {
         box-shadow: 0 0 0 2px #1A1A1A, 0 0 0 4px rgba(229, 62, 62, 0.8);
         border-color: transparent !important;
@@ -184,6 +188,7 @@
         }
       }
 
+      /* --- Interactive Differentiators --- */
       .differentiator-content {
         transition: opacity 0.4s ease-out, transform 0.4s ease-out;
       }
@@ -206,6 +211,7 @@
   }
 }
 </script>
+<link rel="stylesheet" href="/index.css">
 </head>
   <body class="bg-[#1A1A1A]">
     <div id="root"></div>
