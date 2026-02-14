@@ -10,7 +10,6 @@ import Footer from './components/Footer';
 import DiagnosticModal from './components/DiagnosticModal';
 import ImagineSiteModal from './components/ImagineSiteModal';
 import IntroAnimation from './components/IntroAnimation';
-import LiveConcierge from './components/LiveConcierge';
 
 const App: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -43,13 +42,8 @@ const App: React.FC = () => {
         <CtaSection onOpenModal={() => setIsModalOpen(true)} />
       </main>
       <Footer />
-      
-      {/* Modais Estratégicos */}
       <DiagnosticModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
       <ImagineSiteModal isOpen={isImagineModalOpen} onClose={() => setIsImagineModalOpen(false)} />
-      
-      {/* Concierge de IA em Tempo Real */}
-      <LiveConcierge />
     </div>
   );
 };
