@@ -8,38 +8,24 @@ const DiagnosticModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ i
     const [view, setView] = useState('form');
     const [formData, setFormData] = useState({ nome: '', dificuldade: '' });
     const [analysisResult, setAnalysisResult] = useState('');
-    const [error, setError] = useState<{ message: string; technical?: string; keyDebug?: string } | null>(null);
+    const [error, setError] = useState<string | null>(null);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setView('loading');
         setError(null);
 
-        const rawKey = process.env.API_KEY || "";
-        const apiKey = rawKey.replace(/[^a-zA-Z0-9\-_]/g, '').trim();
-        const maskedKey = apiKey.length > 8 ? `${apiKey.substring(0, 5)}...${apiKey.substring(apiKey.length - 4)}` : "Inválida";
-
-        if (!apiKey || apiKey.toLowerCase().includes("placeholder")) {
-            setError({ message: 'Erro de Configuração.', technical: 'Variável API_KEY não configurada no Vercel.', keyDebug: maskedKey });
-            setView('form');
-            return;
-        }
-
         try {
-            const ai = new GoogleGenAI({ apiKey });
+            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || "" });
             const response = await ai.models.generateContent({
-                model: 'gemini-flash-latest',
-                contents: `Gere um diagnóstico de negócios para a empresa ${formData.nome}. Desafio: ${formData.dificuldade}. Responda em Português do Brasil com tom profissional e estratégico.`,
+                model: 'gemini-3-flash-preview',
+                contents: `Gere um diagnóstico estratégico rápido para a empresa ${formData.nome}. Desafio: ${formData.dificuldade}.`,
             });
-            setAnalysisResult(response.text ?? '');
+            setAnalysisResult(response.text ?? 'Nenhum resultado gerado.');
             setView('result');
         } catch (err: any) {
-            const isInvalidKey = err?.message?.includes("400");
-            setError({ 
-                message: isInvalidKey ? 'Chave Recusada.' : 'Erro de Análise.', 
-                keyDebug: maskedKey,
-                technical: isInvalidKey ? 'Verifique se a variável de ambiente foi atualizada no Vercel.' : err.message 
-            });
+            console.error(err);
+            setError(err.message || "Erro na conexão com o servidor de IA.");
             setView('form');
         }
     };
@@ -48,55 +34,54 @@ const DiagnosticModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ i
 
     return (
         <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/95 p-4" onClick={onClose}>
-            <div className="bg-[#0a0a0a] rounded-3xl w-full max-w-xl border border-white/10 p-10 relative shadow-2xl" onClick={e => e.stopPropagation()}>
+            <div className="bg-[#0a0a0a] rounded-3xl w-full max-w-lg border border-white/10 p-10 relative" onClick={e => e.stopPropagation()}>
                 <button onClick={onClose} className="absolute top-8 right-8 text-gray-500 hover:text-white transition-colors"><XIcon /></button>
                 
                 {view === 'form' && (
                      <form onSubmit={handleSubmit} className="space-y-6">
-                        <div className="text-center mb-8">
-                            <h2 className="text-3xl font-black text-white uppercase italic tracking-tighter">Raio-X <span className="text-red-600">Flash</span></h2>
-                            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-1">Grupo CBL Intelligence Unit</p>
+                        <div className="text-center mb-10">
+                            <h2 className="text-3xl font-black text-white uppercase italic tracking-tighter">Raio-X <span className="text-red-600">IA</span></h2>
+                            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-[0.4em] mt-1">CBL Strategy Unit</p>
                         </div>
 
                         <div className="space-y-4">
                             <input
                                 type="text"
-                                placeholder="Nome da Empresa"
+                                placeholder="Empresa"
                                 value={formData.nome}
                                 onChange={e => setFormData({...formData, nome: e.target.value})}
-                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-4 text-white focus:border-red-600 outline-none transition-all placeholder:text-white/10"
+                                className="w-full bg-white/5 border border-white/10 rounded-xl px-5 py-4 text-white focus:border-red-600 outline-none transition-all"
                             />
                             <textarea
-                                placeholder="Qual seu maior desafio tecnológico atual?"
+                                placeholder="Qual seu maior desafio tecnológico?"
                                 value={formData.dificuldade}
                                 onChange={e => setFormData({...formData, dificuldade: e.target.value})}
-                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-4 text-white h-32 focus:border-red-600 outline-none transition-all resize-none placeholder:text-white/10"
+                                className="w-full bg-white/5 border border-white/10 rounded-xl px-5 py-4 text-white h-32 focus:border-red-600 outline-none transition-all resize-none"
                             />
                         </div>
                         
                         {error && (
-                            <div className="p-4 bg-red-600/5 border border-red-600/20 rounded-xl text-center">
-                                <p className="text-red-500 text-[10px] font-bold uppercase">{error.message}</p>
-                                <p className="text-[9px] text-gray-500 mt-1 font-mono">DEBUG: {error.keyDebug}</p>
+                            <div className="p-4 bg-red-600/10 border border-red-600/30 rounded-xl">
+                                <p className="text-red-500 text-[10px] font-mono break-all">{error}</p>
                             </div>
                         )}
-                        <button type="submit" className="w-full bg-white text-black py-5 rounded-xl font-black uppercase tracking-widest hover:bg-red-600 hover:text-white transition-all shadow-lg">Solicitar Diagnóstico IA</button>
+                        <button type="submit" className="w-full bg-white text-black py-5 rounded-xl font-black uppercase hover:bg-red-600 hover:text-white transition-all shadow-xl shadow-red-600/10">Iniciar Diagnóstico</button>
                     </form>
                 )}
                 
                 {view === 'loading' && (
-                    <div className="flex flex-col items-center py-20">
-                        <SpinnerIcon />
-                        <p className="mt-8 text-white text-[10px] font-bold animate-pulse uppercase tracking-[0.3em]">Analisando Ecossistema...</p>
+                    <div className="flex flex-col items-center py-20 text-center">
+                        <div className="w-12 h-12 border-4 border-red-600 border-t-transparent rounded-full animate-spin"></div>
+                        <p className="mt-8 text-white text-[10px] font-bold animate-pulse uppercase tracking-[0.5em]">Processando...</p>
                     </div>
                 )}
 
                 {view === 'result' && (
-                    <div className="space-y-6">
-                        <div className="max-h-[50vh] overflow-y-auto custom-scrollbar pr-4 text-sm text-gray-400 leading-relaxed font-light">
+                    <div className="space-y-8">
+                        <div className="max-h-[50vh] overflow-y-auto custom-scrollbar pr-4 text-sm text-gray-300 leading-relaxed font-light">
                             <div dangerouslySetInnerHTML={{ __html: analysisResult.replace(/\n/g, '<br/>') }} />
                         </div>
-                        <button onClick={() => setView('form')} className="w-full bg-white/5 text-white py-4 rounded-xl text-[10px] uppercase font-bold hover:bg-white/10 transition-all border border-white/5">Nova Simulação</button>
+                        <button onClick={() => setView('form')} className="w-full bg-red-600 text-white py-4 rounded-xl text-[10px] uppercase font-black tracking-widest hover:bg-red-700 transition-all">Nova Consulta</button>
                     </div>
                 )}
             </div>
