@@ -6,11 +6,12 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Grupo CBL - Inovação & Tech</title>
-    <script src="https://cdn.tailwindcss.com"></script>
     <script>
-      // Garante que process.env exista no navegador para evitar erros de referência
+      // Polyfill crítico para permitir que process.env.API_KEY funcione no navegador
+      // e evitar o erro "process is not defined" no console do usuário.
       window.process = window.process || { env: {} };
     </script>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
       @import url('https://fonts.googleapis.com/css2?family-Inter:wght@400;500;600;700;900&display=swap');
       body {
