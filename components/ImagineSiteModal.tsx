@@ -23,20 +23,16 @@ const ImagineSiteModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ 
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [buildLogs, setBuildLogs] = useState<string[]>([]);
   const [projectFiles, setProjectFiles] = useState<ProjectFiles | null>(null);
-  const [error, setError] = useState<{ message: string; isQuota: boolean; technical?: string } | null>(null);
-  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const [error, setError] = useState<{ message: string; technical?: string; keyDebug?: string } | null>(null);
 
   const logs = [
     "Iniciando Sistema de Draft Grupo CBL...",
-    "Validando infraestrutura de rede segura...",
-    "Escaneando identidade visual e referências...",
+    "Conectando com Google AI Studio (Gemini 3 Flash)...",
+    "Validando credenciais de engenharia...",
     "Gerando design tokens personalizados...",
     "Arquitetando layout mobile-first...",
-    "Escrevendo estrutura com boas práticas de SEO...",
     "Implementando interações de alto padrão...",
-    "Otimizando ativos para carregamento rápido...",
-    "Executando auditoria final de interface...",
-    "Projeto pronto para visualização."
+    "Draft pronto para visualização."
   ];
 
   useEffect(() => {
@@ -46,98 +42,66 @@ const ImagineSiteModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ 
     if (step === 'loading') {
       let currentLogIndex = 0;
       setElapsedSeconds(0);
-      
-      timerInterval = window.setInterval(() => {
-        setElapsedSeconds(prev => prev + 1);
-      }, 1000);
-
+      timerInterval = window.setInterval(() => setElapsedSeconds(prev => prev + 1), 1000);
       logInterval = window.setInterval(() => {
         setProgress(prev => {
           if (prev >= 98) return prev; 
-          const next = prev + (Math.random() * 2);
+          const next = prev + 2;
           const logThreshold = (currentLogIndex + 1) * (100 / logs.length);
           if (next >= logThreshold && currentLogIndex < logs.length) {
-            const nextLog = logs[currentLogIndex];
-            if (nextLog) {
-              setBuildLogs(prevLogs => [...prevLogs, `> ${nextLog}`]);
-            }
+            setBuildLogs(prevLogs => [...prevLogs, `> ${logs[currentLogIndex]}`]);
             currentLogIndex++;
           }
           return next;
         });
-      }, 180);
-    } else {
-      setProgress(0);
-      setBuildLogs([]);
+      }, 250);
     }
-
-    return () => {
-      clearInterval(logInterval);
-      clearInterval(timerInterval);
-    };
+    return () => { clearInterval(logInterval); clearInterval(timerInterval); };
   }, [step]);
-
-  const handleOpenSelectKey = async () => {
-    if (window.aistudio?.openSelectKey) {
-      await window.aistudio.openSelectKey();
-      setError(null);
-    }
-  };
 
   const generateFullWebsite = async () => {
     setStep('loading');
     setError(null);
 
-    // CRÍTICO: .trim() remove espaços que o Vercel ou o Ctrl+C podem ter incluído
+    // SANITIZAÇÃO: Remove qualquer coisa que não seja letra, número, hífen ou underline
     const rawApiKey = process.env.API_KEY || "";
-    const apiKey = rawApiKey.trim();
+    const cleanKey = rawApiKey.replace(/[^a-zA-Z0-9\-_]/g, '').trim();
     
-    if (!apiKey || apiKey === "undefined" || apiKey.length < 10) {
+    const maskedKey = cleanKey.length > 8 
+      ? `${cleanKey.substring(0, 5)}...${cleanKey.substring(cleanKey.length - 4)}`
+      : "Chave Ausente ou Inválida";
+
+    if (!cleanKey || cleanKey.length < 15) {
       setError({ 
-        message: 'Configuração da API CBL Pendente.', 
-        isQuota: false, 
-        technical: 'A variável API_KEY está vazia ou não foi encontrada no Vercel. Verifique as Environment Variables e faça um Redeploy.' 
+        message: 'Variável de API não configurada.', 
+        technical: 'O sistema não encontrou a chave no ambiente do Vercel.',
+        keyDebug: maskedKey
       });
       setStep('form');
       return;
     }
 
-    const ai = new GoogleGenAI({ apiKey });
-    
-    const prompt = `
-      Crie um website profissional JSON para a empresa ${formData.companyName}.
-      Estilo: ${formData.styleDescription}. Essência do negócio: ${formData.essence}.
-      Retorne JSON: { "index.html": "...", "theme.css": "...", "interactions.js": "..." }
-    `;
-
     try {
+      const ai = new GoogleGenAI({ apiKey: cleanKey });
+      const prompt = `Crie um website profissional JSON para a empresa ${formData.companyName}. Estilo: ${formData.styleDescription}. Essência: ${formData.essence}. Retorne JSON: { "index.html": "...", "theme.css": "...", "interactions.js": "..." }`;
+
       const response = await ai.models.generateContent({
-        model: 'gemini-3-pro-preview',
+        model: 'gemini-3-flash-preview',
         contents: prompt,
         config: { responseMimeType: 'application/json' }
       });
 
-      const responseText = response.text || '{}';
-      const files = JSON.parse(responseText) as ProjectFiles;
-      
+      const files = JSON.parse(response.text || '{}');
       setProjectFiles(files);
       setProgress(100);
-      setTimeout(() => {
-        setStep('preview');
-        setIsCtaVisible(true);
-      }, 800);
+      setStep('preview');
     } catch (err: any) {
-      console.error("ImagineSiteModal API Error:", err);
-      const errorMsg = err?.message || '';
-      const isInvalidKey = errorMsg.includes("400") || errorMsg.includes("API key not valid");
-      const isQuotaError = err?.status === 429 || errorMsg.includes("429") || errorMsg.includes("quota");
-      
+      console.error("ImagineSite Error:", err);
+      const isInvalidKey = err?.message?.includes("400") || err?.message?.includes("API key not valid");
       setError({ 
-        message: isInvalidKey ? 'Chave de API Inválida.' : isQuotaError ? 'Limite de Requisições Excedido.' : 'Falha na Engenharia do Draft.', 
-        isQuota: isQuotaError,
-        technical: isInvalidKey 
-          ? 'O Google recusou sua chave. Verifique se copiou corretamente do AI Studio e se fez o REDEPLOY no Vercel.' 
-          : errorMsg || 'Erro de comunicação desconhecido.'
+        message: isInvalidKey ? 'Chave Recusada pelo Google.' : 'Erro na Geração do Draft.', 
+        keyDebug: maskedKey,
+        technical: isInvalidKey ? 'Sua chave foi enviada, mas o Google a rejeitou como inválida. Verifique se copiou corretamente.' : err.message
       });
       setStep('form');
     }
@@ -146,94 +110,67 @@ const ImagineSiteModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/98 backdrop-blur-2xl overflow-hidden p-0 md:p-2">
-      <div className="relative w-full h-full md:w-[98vw] md:h-[96vh] bg-[#050505] md:rounded-3xl border border-white/10 shadow-2xl flex flex-col overflow-hidden">
-        
-        <div className="bg-[#0c0c0c] border-b border-white/10 p-2.5 md:p-4 flex justify-between items-center px-4 md:px-6 shrink-0 h-14 md:h-16">
-          <div className="flex items-center gap-2 md:gap-4">
-             <span className="text-[8px] md:text-[10px] font-mono text-white/30 tracking-widest uppercase flex items-center gap-1.5 overflow-hidden whitespace-nowrap">
-                CBL_DRAFT_SYSTEM_V8.1
-             </span>
-          </div>
-          <button onClick={onClose} className="text-white/40 hover:text-white transition-all bg-white/5 hover:bg-white/10 p-2 rounded-lg">
-            <XIcon />
-          </button>
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/98 backdrop-blur-2xl p-0 md:p-4">
+      <div className="relative w-full h-full md:max-w-6xl md:h-[90vh] bg-[#050505] md:rounded-3xl border border-white/10 flex flex-col overflow-hidden">
+        <div className="bg-[#0c0c0c] border-b border-white/10 p-4 flex justify-between items-center px-6">
+          <span className="text-[10px] font-mono text-white/30 tracking-widest uppercase">CBL_ENGINE_V9.0_FLASH</span>
+          <button onClick={onClose} className="text-white/40 hover:text-white"><XIcon /></button>
         </div>
 
         {step === 'form' && (
-          <div className="flex-grow flex items-center justify-center p-4 sm:p-8 md:p-12 overflow-y-auto custom-scrollbar">
-            <div className="w-full max-w-5xl space-y-8 md:space-y-12 py-4">
+          <div className="flex-grow flex items-center justify-center p-8 overflow-y-auto">
+            <div className="w-full max-w-2xl space-y-8">
               <div className="text-center">
-                <h2 className="text-3xl sm:text-6xl md:text-8xl font-black tracking-tighter uppercase italic text-white leading-none">
-                  Draft <span className="text-red-600">Pro</span>
-                </h2>
+                <h2 className="text-5xl font-black uppercase italic text-white tracking-tighter">Draft <span className="text-red-600">Flash</span></h2>
+                <p className="text-gray-500 text-sm mt-2 tracking-widest uppercase">Visualização Instantânea de Projeto</p>
               </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8">
-                <input 
-                    type="text" 
-                    value={formData.companyName}
-                    onChange={(e) => setFormData({...formData, companyName: e.target.value})}
-                    placeholder="Nome da Empresa" 
-                    className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 md:py-4 text-white outline-none focus:border-red-600" 
-                />
-                <input 
-                    type="text" 
-                    value={formData.styleDescription}
-                    onChange={(e) => setFormData({...formData, styleDescription: e.target.value})}
-                    placeholder="Estilo (Ex: Moderno, Minimalista)" 
-                    className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 md:py-4 text-white outline-none focus:border-red-600" 
-                />
-              </div>
-
-              <textarea 
-                value={formData.essence}
-                onChange={(e) => setFormData({...formData, essence: e.target.value})}
-                placeholder="Qual o diferencial do negócio?" 
-                className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 md:py-4 text-white h-32 outline-none focus:border-red-600 resize-none" 
-              />
 
               <div className="space-y-4">
-                {error && (
-                  <div className="p-4 bg-red-600/10 border border-red-600/30 rounded-lg text-center">
-                    <p className="text-red-500 font-bold uppercase text-xs tracking-widest">{error.message}</p>
-                    <p className="text-[10px] text-gray-500 font-mono mt-1 opacity-70 italic">{error.technical}</p>
-                    {error.isQuota && (
-                      <button onClick={handleOpenSelectKey} className="mt-2 text-[10px] text-white underline block mx-auto">Configurar Chave Própria</button>
-                    )}
-                  </div>
-                )}
-                <button 
-                  onClick={generateFullWebsite}
-                  disabled={!formData.companyName}
-                  className="w-full bg-white text-black py-4 md:py-6 rounded-lg font-black uppercase tracking-widest hover:bg-red-600 hover:text-white transition-all disabled:opacity-30"
-                >
-                  Engenhar Draft
-                </button>
+                <input 
+                  type="text" 
+                  value={formData.companyName}
+                  onChange={(e) => setFormData({...formData, companyName: e.target.value})}
+                  placeholder="Nome da Empresa" 
+                  className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-4 text-white outline-none focus:border-red-600 transition-all" 
+                />
+                <textarea 
+                  value={formData.essence}
+                  onChange={(e) => setFormData({...formData, essence: e.target.value})}
+                  placeholder="O que sua empresa faz?" 
+                  className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-4 text-white h-32 outline-none focus:border-red-600 resize-none transition-all" 
+                />
               </div>
+
+              {error && (
+                <div className="p-4 bg-red-600/10 border border-red-600/30 rounded-lg text-center space-y-2">
+                  <p className="text-red-500 font-bold text-xs uppercase">{error.message}</p>
+                  <p className="text-[10px] text-gray-400 font-mono">Chave no Sistema: <span className="text-white">{error.keyDebug}</span></p>
+                  <p className="text-[9px] text-gray-500 italic">{error.technical}</p>
+                </div>
+              )}
+
+              <button 
+                onClick={generateFullWebsite}
+                disabled={!formData.companyName}
+                className="w-full bg-white text-black py-5 rounded-lg font-black uppercase tracking-[0.3em] hover:bg-red-600 hover:text-white transition-all disabled:opacity-20"
+              >
+                Engenhar Website
+              </button>
             </div>
           </div>
         )}
 
         {step === 'loading' && (
-          <div className="flex-grow flex flex-col items-center justify-center p-6 bg-black">
-            <div className="w-16 h-16 border-4 border-red-600 border-t-transparent rounded-full animate-spin mb-8"></div>
-            <div className="w-full max-w-lg space-y-4">
-               <div className="bg-[#080808] border border-white/5 rounded-xl p-4 h-40 overflow-y-auto font-mono text-[10px] text-white/40">
-                  {buildLogs.map((log, i) => <div key={i}>{log}</div>)}
-               </div>
-               <div className="h-1 bg-white/5 rounded-full overflow-hidden">
-                 <div className="h-full bg-red-600 transition-all duration-300" style={{ width: `${progress}%` }}></div>
-               </div>
+          <div className="flex-grow flex flex-col items-center justify-center p-6">
+            <div className="w-12 h-12 border-2 border-red-600 border-t-transparent rounded-full animate-spin mb-8"></div>
+            <div className="w-full max-w-sm bg-white/5 p-4 rounded-xl border border-white/10 font-mono text-[10px] text-white/40 h-40 overflow-y-auto">
+              {buildLogs.map((log, i) => <div key={i}>{log}</div>)}
             </div>
           </div>
         )}
 
         {step === 'preview' && projectFiles && (
-          <iframe 
-            srcDoc={projectFiles['index.html']}
-            className="flex-grow w-full h-full border-none bg-white"
-          />
+          <iframe srcDoc={projectFiles['index.html']} className="flex-grow w-full h-full border-none bg-white" />
         )}
       </div>
     </div>
