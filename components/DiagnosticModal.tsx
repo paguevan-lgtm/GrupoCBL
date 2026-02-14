@@ -1,8 +1,8 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
 import { GoogleGenAI } from '@google/genai';
-import { XIcon } from './icons/XIcon';
+import React, { useCallback, useEffect, useState } from 'react';
 import { SpinnerIcon } from './icons/SpinnerIcon';
+import { XIcon } from './icons/XIcon';
 
 const FormField = ({ label, placeholder, name, value, onChange, onCheckboxChange, isChecked, type = 'text' }) => (
     <div>
@@ -15,7 +15,7 @@ const FormField = ({ label, placeholder, name, value, onChange, onCheckboxChange
             value={value}
             onChange={onChange}
             disabled={isChecked}
-            className="w-full bg-[#3d4451] border border-transparent rounded-md px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-[#3d4451] border border-transparent rounded-md px-3 py-2 text-white placeholder-gray-400 focus:outline-none transition-shadow duration-300 modal-input disabled:opacity-50 disabled:cursor-not-allowed"
         />
         <div className="flex items-center mt-2">
             <label htmlFor={`checkbox-${name}`} className="flex items-center cursor-pointer group">
@@ -71,8 +71,8 @@ const ResultView = ({ result, onRestart }) => {
             .replace(/^(---|###)$/gm, '<hr class="border-t border-red-600/30 my-6" />')
             .replace(/^(\d+\.\s.*)$/gm, '<h4 class="text-lg font-bold text-red-500 mt-8 mb-4">$1</h4>')
             .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold text-white">$1</strong>')
-            .replace(/^\s*>\s?/gm, '') // Limpa resquícios do formato antigo
-            .replace(/\n/g, '<br />'); // Converte quebras de linha em <br> para manter os parágrafos
+            .replace(/^\s*>\s?/gm, '')
+            .replace(/\n/g, '<br />');
     };
 
 
@@ -104,7 +104,7 @@ const ResultView = ({ result, onRestart }) => {
                 />
             </div>
             <p className="text-xs text-center text-gray-500 mt-6 px-4">
-                *Este é um diagnóstico gerado por IA e representa uma estimativa com base nos dados fornecidos. Os resultados reais podem variar e dependem de múltiplos fatores de mercado e execução.
+                *Este é um diagnóstico estratégico do Grupo CBL e representa uma estimativa com base nos dados fornecidos. Os resultados reais podem variar e dependem de múltiplos fatores de mercado e execução.
             </p>
              <div className="mt-6 flex flex-col sm:flex-row gap-4">
                  <a 
@@ -126,7 +126,12 @@ const ResultView = ({ result, onRestart }) => {
     );
 };
 
-const DiagnosticModal = ({ isOpen, onClose }) => {
+interface DiagnosticModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+}
+
+const DiagnosticModal: React.FC<DiagnosticModalProps> = ({ isOpen, onClose }) => {
     const [view, setView] = useState('form'); // 'form', 'loading', 'result'
     const [formData, setFormData] = useState({
         nome: '', link: '', instagram: '', whatsapp: '', faturamento: '', investimento: '', concorrente: '', processo: '', dificuldade: ''
@@ -136,10 +141,10 @@ const DiagnosticModal = ({ isOpen, onClose }) => {
     });
     const [loadingMessage, setLoadingMessage] = useState('');
     const [analysisResult, setAnalysisResult] = useState('');
-    const [error, setError] = useState('');
+    const [error, setError] = useState<{ message: string; isQuota: boolean } | null>(null);
 
     const loadingMessages = [
-        "Conectando com nossa IA Estratégica...",
+        "Conectando com nossa Engenharia Estratégica...",
         "Analisando dados de faturamento e investimento...",
         "Cruzando informações com benchmarks de mercado...",
         "Avaliando processo de vendas e dificuldades...",
@@ -160,16 +165,16 @@ const DiagnosticModal = ({ isOpen, onClose }) => {
             }
         }, 2000);
         return () => clearInterval(interval);
-    }, [view]);
+    }, [view, loadingMessages]);
 
     const handleClose = useCallback(() => {
         onClose();
-        setTimeout(() => { // Reset state after transition
+        setTimeout(() => {
             setView('form');
             setFormData({ nome: '', link: '', instagram: '', whatsapp: '', faturamento: '', investimento: '', concorrente: '', processo: '', dificuldade: '' });
             setCheckboxes({ nome: false, link: false, instagram: false, whatsapp: false, faturamento: false, investimento: false, concorrente: false, processo: false, dificuldade: false });
             setAnalysisResult('');
-            setError('');
+            setError(null);
         }, 300);
     }, [onClose]);
 
@@ -182,35 +187,41 @@ const DiagnosticModal = ({ isOpen, onClose }) => {
         const { name, checked } = e.target;
         setCheckboxes(prev => ({ ...prev, [name]: checked }));
     };
+
+    const handleOpenSelectKey = async () => {
+        if (window.aistudio?.openSelectKey) {
+            await window.aistudio.openSelectKey();
+            setError(null);
+        }
+    };
     
     const handleSubmit = async (e) => {
         e.preventDefault();
         setView('loading');
-        setError('');
+        setError(null);
 
         const prompt = `
-            Você é um consultor de negócios sênior e especialista em marketing digital do 'Grupo CBL - Inovação & Tech', conhecido como 'Raio-X de Negócios'. Sua tarefa é analisar os dados de um potencial cliente de forma crítica e construtiva, gerando um relatório tático. A sua resposta final deve ser persuasiva e **estritamente formatada** em markdown simples para ser renderizada em uma UI premium.
+            Você é um consultor de negócios sênior e especialista em marketing digital do 'Grupo CBL - Inovação & Tech', conhecido como 'Raio-X de Negócios'. Sua tarefa é analisar os dados de um potencial cliente de forma crítica e construtiva.
 
-            **REGRAS IMPORTANTES:**
-            1.  **Detecção de Dados Inválidos:** Se os dados fornecidos pelo cliente parecerem aleatórios ou sem sentido, sua análise deve reconhecer isso. Comece o relatório com uma frase como: 'Percebi que alguns dados podem ter sido preenchidos rapidamente. Sem problemas, vou te dar uma direção estratégica geral...'. Em seguida, forneça uma análise mais genérica e valiosa.
-            2.  **Análise Fiel:** Se os dados forem coerentes, analise-os fielmente. Crie um relatório altamente personalizado, citando os dados fornecidos.
-            3.  **Formato de Saída:** A resposta DEVE seguir este formato markdown. Use parágrafos simples e **texto em negrito** para ênfase. Não use listas com '>'. Use '###' ou '####' para títulos e '---' ou '###' em uma linha própria para divisórias.
+            **REGRAS DE DETECÇÃO DE DADOS INVÁLIDOS:**
+            1. Analise se os campos preenchidos contêm dados aleatórios (ex: "asdf", "123", "teste", "sua mae", etc) ou se os links são claramente falsos.
+            2. Se você perceber que o usuário colocou dados no aleatório (mesmo que alguns campos pareçam reais), você DEVE:
+               - Iniciar o relatório com um aviso claro: "#### ATENÇÃO: DADOS INCONSISTENTES DETECTADOS".
+               - Escrever: "Percebemos que as informações fornecidas parecem não corresponder à realidade de um negócio estruturado. Isso torna extremamente difícil gerar um diagnóstico tático preciso e personalizado para o seu caso agora."
+               - Em seguida, mude o foco totalmente para a nossa empresa: "Como o Grupo CBL pode ajudar empresas reais?".
+               - Fale sobre nossa expertise em transformar negócios com tecnologia de ponta, estratégia de crescimento e engenharia de software sob medida.
+               - Seja persuasivo sobre por que ele deve agendar uma call conosco para que possamos extrair os dados reais e ajudar de verdade.
 
-            **Exemplo de Formato de Saída:**
-            #### RAIO-X DE NEGÓCIOS: [NOME DA EMPRESA]
-            Após uma análise técnica do seu ecossistema digital atual, identificamos que o **[Nome da Empresa]** possui uma base operacional estabelecida via Instagram e WhatsApp, mas opera com uma subutilização severa do potencial de tráfego pago e conversão automática.
-            ---
-            3. SOLUÇÃO TÁTICA CBL
-
-            Para escalar e superar a dificuldade de "ganhar mais", é preciso transformar o [Nome da Empresa] de um estabelecimento passivo em uma **máquina ativa de vendas local**.
-
-            **Ecossistema (Site de Alta Conversão):**
-            Descrição da solução de site/landing page e como ela resolve um problema do cliente. Use **texto em negrito** para destacar termos importantes. Parágrafos devem ser separados por uma linha em branco.
+            **REGRAS PARA DADOS VÁLIDOS:**
+            1. Se os dados forem coerentes, crie um relatório altamente personalizado dividido em: Contexto, Gargalos Identificados, Plano de Ação e Projeção de Escala.
+            
+            **FORMATO DE SAÍDA:**
+            - Markdown simples para UI Premium.
+            - Use '###' ou '####' para títulos e '---' para divisórias.
+            - Tonalidade: Profissional, executiva e focada em resultados. Não mencione IA.
 
             **Dados do Cliente para Análise:**
             ${Object.entries(formData).filter(([key, value]) => value && !checkboxes[key]).map(([key, value]) => `* **${key.charAt(0).toUpperCase() + key.slice(1)}:** ${value}`).join('\n')}
-
-            Agora, gere o relatório seguindo **TODAS** as regras e o formato acima.
         `;
 
         try {
@@ -219,11 +230,21 @@ const DiagnosticModal = ({ isOpen, onClose }) => {
                 model: 'gemini-3-flash-preview',
                 contents: prompt,
             });
-            setAnalysisResult(response.text);
+            setAnalysisResult(response.text ?? '');
             setView('result');
-        } catch (err) {
-            console.error("Gemini API Error:", err);
-            setError('Ocorreu um erro ao analisar os dados. Por favor, tente novamente.');
+        } catch (err: any) {
+            console.error("Gemini Diagnostic API Error:", err);
+            if (err?.status === 429 || err?.message?.includes("429") || err?.message?.includes("quota")) {
+                setError({ 
+                    message: 'A cota de análise gratuita foi atingida. Configure sua própria chave para continuar.', 
+                    isQuota: true 
+                });
+            } else {
+                setError({ 
+                    message: 'Ocorreu um erro ao analisar os dados. Por favor, tente novamente.', 
+                    isQuota: false 
+                });
+            }
             setView('form');
         }
     };
@@ -245,9 +266,27 @@ const DiagnosticModal = ({ isOpen, onClose }) => {
                            </svg>
                            RAIO-X DE NEGÓCIOS
                         </h2>
-                        <p className="text-center text-gray-400 mb-6">Preencha os dados reais. Nosso sistema identificará gargalos ocultos.</p>
-                        {error && <p className="text-center text-red-500 mb-4">{error}</p>}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[60vh] overflow-y-auto pr-2">
+                        <p className="text-center text-gray-400 mb-6">Preencha os dados reais. Nossa equipe identificará gargalos ocultos.</p>
+                        
+                        {error && (
+                            <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-lg text-center space-y-3">
+                                <p className="text-red-500 text-sm font-medium">{error.message}</p>
+                                {error.isQuota && (
+                                    <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                                        <button 
+                                            type="button"
+                                            onClick={handleOpenSelectKey}
+                                            className="text-[10px] font-bold uppercase tracking-widest text-white border border-white/20 px-3 py-1.5 rounded hover:bg-white/10"
+                                        >
+                                            Configurar Minha Chave
+                                        </button>
+                                        <a href="https://ai.google.dev/gemini-api/docs/billing" target="_blank" rel="noopener noreferrer" className="text-[9px] text-gray-500 underline uppercase tracking-widest">Ver Faturamento</a>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
                            <FormField label="Nome do Empreendimento" placeholder="Ex: Tech Solutions" name="nome" value={formData.nome} onChange={handleInputChange} onCheckboxChange={handleCheckboxChange} isChecked={checkboxes.nome} />
                            <FormField label="Link (Site ou Google)" placeholder="www.suaempresa.com" name="link" value={formData.link} onChange={handleInputChange} onCheckboxChange={handleCheckboxChange} isChecked={checkboxes.link} />
                            <FormField label="Link do Instagram" placeholder="@seuinsta" name="instagram" value={formData.instagram} onChange={handleInputChange} onCheckboxChange={handleCheckboxChange} isChecked={checkboxes.instagram} />
@@ -260,7 +299,7 @@ const DiagnosticModal = ({ isOpen, onClose }) => {
                             <FormField label="Qual sua maior dificuldade hoje?" placeholder="Ex: Tenho muitos curiosos e poucas vendas..." name="dificuldade" value={formData.dificuldade} onChange={handleInputChange} onCheckboxChange={handleCheckboxChange} isChecked={checkboxes.dificuldade} />
                            </div>
                         </div>
-                        <button type="submit" className="w-full bg-red-600 text-white mt-6 py-3 rounded-md font-bold hover:bg-red-700 transition-colors duration-300">
+                        <button type="submit" className="w-full bg-red-600 text-white mt-6 py-3 rounded-md font-bold hover:bg-red-700 transition-colors duration-300 cta-pulse">
                             Gerar Raio-X
                         </button>
                     </form>
